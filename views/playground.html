@@ -1,0 +1,58 @@
+{% extends "layout.html" %}
+
+{% block title %}Sandbox{% endblock %}
+
+{% block body %}
+<div class="paxl">
+
+	<ul style="display:none;">
+	{% for snap in snaps %}
+		<li>{{snap.created_at}} | <strong>{{snap.count}}</strong></li>	
+	{% endfor %}
+	</ul>
+
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+<script src="http://code.highcharts.com/modules/exporting.js"></script>
+
+<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+
+	<script>
+
+		var dates = [
+			{% for snap in snaps %}
+				[new Date("{{snap.created_at}}").getTime(), {{snap.count}}] {% if !loop.last %},{% endif %} 
+			{% endfor %}
+		];
+
+		$(function () {
+    			var chart;
+    			$(document).ready(function() {
+        			chart = new Highcharts.Chart({
+            				chart: {
+                				renderTo: 'container',
+                				type: 'spline'
+            				},
+					title : {
+						text : 'Frontenders production opened issues'
+					},
+	    				xAxis: {
+                				type: 'datetime'
+            				},
+					yAxis : {
+						title : {
+							text : 'Number of issues'
+						}
+					},
+            				series: [{
+						name:  'All issues count',
+                				data:  dates
+            				}]
+        			});
+    			});   
+		});
+
+	</script>
+
+</div>
+{% endblock %}

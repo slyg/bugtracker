@@ -19,10 +19,28 @@ var redmine = new Redmine({
 var app = module.exports = express();
 
 app.configure(function(){
+
+	app.set('views', __dirname + '/views');
+        app.engine('html', cons.swig);
+
+	app.use(express.static(__dirname + '/static'));
+
+        app.use(express.logger());
+        app.use(express.cookieParser());
+
         app.use(express.bodyParser());
         app.use(express.methodOverride());
         app.use(app.router);
         app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+});
+
+app.configure('development', function(){
+        swig.init({ root: __dirname + '/views', allowErrors: true, cache: false });
+});
+
+app.configure('production', function(){
+        swig.init({ root: __dirname + '/views', allowErrors: true, cache: true });
+	app.use(express.errorHandler());
 });
 
 // Configure mongodb, attached to server context
@@ -65,22 +83,61 @@ var timer = setInterval(function(){
 
 // Routes
 
-app.get('/', function(req, res) {
-	
-	res.end('coucou');
+app.get('/last/minute', function(req, res) {
+	queryIssuesOfLast('minute', function(snaps){
+		res.render('playground.html', {snaps : snaps});
+	});
 });
 
 app.get('/last/hour', function(req, res){
-	res.end('last hour');
+	queryIssuesOfLast('hour', function(snaps){
+                res.render('playground.html', {snaps : snaps});
+        });
+});
+
+app.get('/last/day', function(req, res){
+        queryIssuesOfLast('day', function(snaps){
+                res.render('playground.html', {snaps : snaps});
+        });
 });
 
 app.get('/last/week', function(req, res){
-        res.end('last week');
+       	queryIssuesOfLast('week', function(snaps){
+                res.render('playground.html', {snaps : snaps});
+        });
 });
 
 app.get('/last/month', function(req, res){
-        res.end('last month');
+        queryIssuesOfLast('month', function(snaps){
+                res.render('playground.html', {snaps : snaps});
+        });
 });
+
+function queryIssuesOfLast(period, next){
+
+	var currentTime = Date.now();
+	var one = {
+		minute	: parseInt(60 * 1000),
+		hour	: parseInt(60 * 60 * 1000),
+		day 	: parseInt(24 * 60 * 60 * 1000),
+		week 	: parseInt(7 * 24 * 60 * 60 * 1000),
+		month	: parseInt(4 * 7 * 24 * 60 * 60 * 1000)
+	};
+        var sinceDate = currentTime - one[period];
+
+        var query = {
+                "created_at" : {"$gte": new Date(sinceDate)}
+        };
+
+        BugSnapshot.find(query, function(err, snaps){
+
+                if(err) throw new Error("mmm :(");
+		
+		next(snaps);
+
+        });
+
+}
 
 // App server start
 
