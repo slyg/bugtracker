@@ -63,15 +63,16 @@ var BugSnapshot = db.model('bugSnapshot', bugSnapshotSchema);
 
 // Launch periodic poll
 
-var delay = parseInt(60*60*1000); // every hour
-var timer = setInterval(function(){
+var delay = parseInt(0.5*60*60*1000); // every 1/2 hour
+var timer = setInterval(lookForIssues, delay);
+function lookForIssues(){
 	console.log('looking for currrent issues ...');
-	redmine.getIssues({query_id: "640"}, function(err, data) {
+        redmine.getIssues({query_id: "640"}, function(err, data) {
                 if (err) {
                         console.log("Error: " + err.message);
-                       	// stop timer
-			clearInterval(timer);
-			return;
+                        // stop timer
+                        clearInterval(timer);
+                        return;
                 }
                 var snap = new BugSnapshot({count : data.total_count});
                 snap.save(function(err){
@@ -79,7 +80,9 @@ var timer = setInterval(function(){
                         console.log(' |-> nb of issues : ' + data.total_count);
                 });
         });
-}, delay);
+}
+// look for issues on app start
+lookForIssues();
 
 // Routes
 
@@ -141,6 +144,6 @@ function queryIssuesOfLast(period, next){
 
 // App server start
 
-app.listen(3000, function(){
-	console.log("Express server listening on port %d in %s mode", 3000, app.settings.env);
+app.listen(8001, function(){
+	console.log("Express server listening on port %d in %s mode", 8001, app.settings.env);
 });
