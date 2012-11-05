@@ -5,13 +5,11 @@ var
 	mongoose = require('mongoose'),
 	Redmine = require('./lib/redmine'),
 	cons = require('consolidate'),
-        swig = require('swig')
+        swig = require('swig'),
+	conf = require('./conf')
 ;
 
-var redmine = new Redmine({
-	host : "redmine.viadeobackoffice.com",
-	apiKey : "f2cddb4e9ca3cce7f19812d42a6cc2f985259017" 
-});
+var redmine = new Redmine(conf.redmine);
 
 
 // App config
