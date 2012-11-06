@@ -5,17 +5,11 @@
 {% block body %}
 <div class="paxl">
 
-	<ul style="display:none;">
-	{% for snap in snaps %}
-		<li>{{snap.created_at}} | <strong>{{snap.count}}</strong></li>	
-	{% endfor %}
-	</ul>
-
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script src="http://code.highcharts.com/highcharts.js"></script>
-<script src="http://code.highcharts.com/modules/exporting.js"></script>
+	<script src="http://code.highcharts.com/modules/exporting.js"></script>
 
-<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+	<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 
 	<script>
 
