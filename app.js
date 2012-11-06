@@ -56,7 +56,7 @@ mongoose.connection.on('error', function (err) {
 var bugSnapshotSchema = new mongoose.Schema({
         created_on : {type: Date, default: Date.now},
         count : Number,
-	issues : Object//[issueSchema]
+	issues : Object
 });
 
 var issueSchema = new mongoose.Schema({

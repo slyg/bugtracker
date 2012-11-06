@@ -15,7 +15,7 @@
 
 		var dates = [
 			{% for snap in snaps %}
-				[new Date("{{snap.created_at}}").getTime(), {{snap.count}}] {% if !loop.last %},{% endif %} 
+				[new Date("{{snap.created_on}}").getTime(), {{snap.count}}] {% if !loop.last %},{% endif %} 
 			{% endfor %}
 		];
 
