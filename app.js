@@ -6,6 +6,7 @@ var
 	Redmine = require('./lib/redmine'),
 	cons = require('consolidate'),
         swig = require('swig'),
+	async = require('async'),
 	conf = require('./conf')
 ;
 
@@ -43,7 +44,7 @@ app.configure('production', function(){
 
 // Configure mongodb, attached to server context
 
-db = mongoose.connect('mongodb://localhost/bugtracker');
+db = mongoose.connect(conf.app.mongodb);
 mongoose.connection.on('error', function (err) {
         console.error('MongoDB error: ' + err.message);
         console.error('Make sure a mongoDB server is running and accessible by this application')
@@ -53,8 +54,30 @@ mongoose.connection.on('error', function (err) {
 // Connect to model
 
 var bugSnapshotSchema = new mongoose.Schema({
-        created_at : {type: Date, default: Date.now},
-        count : Number
+        created_on : {type: Date, default: Date.now},
+        count : Number,
+	issues : Object//[issueSchema]
+});
+
+var issueSchema = new mongoose.Schema({
+	redmineId : String,
+	status : {
+		name : String,
+		id : Number
+	},
+	priority : {
+		name : String,
+		id : Number
+	},
+	author : {
+		name : String,
+		id : Number
+	},
+	assignee : {
+		name : String,
+                id : Number
+        },
+	created_on : Date
 });
 
 var BugSnapshot = db.model('bugSnapshot', bugSnapshotSchema);
@@ -65,14 +88,17 @@ var delay = parseInt(0.5*60*60*1000); // every 1/2 hour
 var timer = setInterval(lookForIssues, delay);
 function lookForIssues(){
 	console.log('looking for currrent issues ...');
-        redmine.getIssues({query_id: "640"}, function(err, data) {
+        redmine.getIssues({query_id: "640", limit : "100"}, function(err, data) {
                 if (err) {
                         console.log("Error: " + err.message);
                         // stop timer
                         clearInterval(timer);
                         return;
                 }
-                var snap = new BugSnapshot({count : data.total_count});
+                var snap = new BugSnapshot({
+			count : data.total_count,
+			issues : data.issues
+		});
                 snap.save(function(err){
                         if (err) throw new Error('Woooops');
                         console.log(' |-> nb of issues : ' + data.total_count);
@@ -83,6 +109,38 @@ function lookForIssues(){
 lookForIssues();
 
 // Routes
+
+app.get('/last/repartition', function(req, res){
+	BugSnapshot
+		.find()
+		.limit(1)
+		.sort("-created_on")
+		.exec(function(err, snaps){
+			
+           		if(err) throw new Error("mmm :(");
+			
+			var snap = snaps[0];
+			var index = 0;
+			var stats = {};
+			var cb = function(){};		
+
+			async.forEach(snap.issues,
+				function(issue, cb){
+					if(!stats[issue.assigned_to.name]) stats[issue.assigned_to.name] = {count: 0, name : issue.assigned_to.name};
+					stats[issue.assigned_to.name].count++;
+					cb();
+				}, function(err){
+					if(err) throw new Error("arf !");
+					res.render('piechart.html', {stats : stats});
+				}
+			);
+
+		})
+	;
+
+
+
+});
 
 app.get('/last/minute', function(req, res) {
 	queryIssuesOfLast('minute', function(snaps){
@@ -127,7 +185,7 @@ function queryIssuesOfLast(period, next){
         var sinceDate = currentTime - one[period];
 
         var query = {
-                "created_at" : {"$gte": new Date(sinceDate)}
+                "created_on" : {"$gte": new Date(sinceDate)}
         };
 
         BugSnapshot.find(query, function(err, snaps){
@@ -142,6 +200,6 @@ function queryIssuesOfLast(period, next){
 
 // App server start
 
-app.listen(8001, function(){
-	console.log("Express server listening on port %d in %s mode", 8001, app.settings.env);
+app.listen(conf.app.port, function(){
+	console.log("Express server listening on port %d in %s mode", conf.app.port, app.settings.env);
 });
