@@ -1,4 +1,4 @@
-// Dependenceies
+// Dependencies
 
 var
 	express = require('express'),
