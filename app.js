@@ -59,27 +59,6 @@ var bugSnapshotSchema = new mongoose.Schema({
 	issues : Object
 });
 
-var issueSchema = new mongoose.Schema({
-	redmineId : String,
-	status : {
-		name : String,
-		id : Number
-	},
-	priority : {
-		name : String,
-		id : Number
-	},
-	author : {
-		name : String,
-		id : Number
-	},
-	assignee : {
-		name : String,
-                id : Number
-        },
-	created_on : Date
-});
-
 var BugSnapshot = db.model('bugSnapshot', bugSnapshotSchema);
 
 // Launch periodic poll
