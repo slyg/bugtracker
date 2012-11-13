@@ -1,12 +1,13 @@
 {% extends "layout.html" %}
 
-{% block title %}Sandbox{% endblock %}
+{% block title %}Frontend Production opened issues timeline{% endblock %}
 
 {% block body %}
 <div class="paxl">
 
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>
 
 	<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
@@ -22,13 +23,13 @@
 		$(function () {
     			var chart;
     			$(document).ready(function() {
-        			chart = new Highcharts.Chart({
+        			chart = new Highcharts.StockChart({
             				chart: {
-                				renderTo: 'container',
-                				type: 'spline'
+                				renderTo: 'container'//,
+                				//type: 'spline'
             				},
 					title : {
-						text : 'Frontenders production opened issues'
+						text : 'Frontenders opened issues on production'
 					},
 	    				xAxis: {
                 				type: 'datetime'
@@ -40,6 +41,7 @@
 					},
             				series: [{
 						name:  'All issues count',
+						step: true,
                 				data:  dates
             				}]
         			});
