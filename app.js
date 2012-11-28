@@ -85,7 +85,7 @@ function lookForIssues(){
         });
 }
 // look for issues on app start
-lookForIssues();
+//lookForIssues();
 
 // Routes
 
@@ -154,6 +154,7 @@ app.get('/last/month', function(req, res){
 function queryIssuesOfLast(period, next){
 
 	var currentTime = Date.now();
+	
 	var one = {
 		minute	: parseInt(60 * 1000),
 		hour	: parseInt(60 * 60 * 1000),
@@ -161,19 +162,18 @@ function queryIssuesOfLast(period, next){
 		week 	: parseInt(7 * 24 * 60 * 60 * 1000),
 		month	: parseInt(4 * 7 * 24 * 60 * 60 * 1000)
 	};
-        var sinceDate = currentTime - one[period];
+	
+    var sinceDate = currentTime - one[period];
 
-        var query = {
-                "created_on" : {"$gte": new Date(sinceDate)}
-        };
-
-        BugSnapshot.find(query, function(err, snaps){
-
-                if(err) throw new Error("mmm :(");
-		
-		next(snaps);
-
-        });
+    var q = BugSnapshot
+    	.find({ "created_on" : {"$gte": new Date(sinceDate)} })
+    	.sort("created_on")
+    ;
+    
+    q.exec(function(err, snaps){
+        if(err) throw new Error("mmm :(");
+        next(snaps);
+    });
 
 }
 
