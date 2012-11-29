@@ -121,30 +121,6 @@ app.get('/last/repartition', function(req, res){
 
 });
 
-app.get('/last/minute', function(req, res) {
-	queryIssuesOfLast('minute', function(snaps){
-		res.render('playground.html', {snaps : snaps});
-	});
-});
-
-app.get('/last/hour', function(req, res){
-	queryIssuesOfLast('hour', function(snaps){
-                res.render('playground.html', {snaps : snaps});
-        });
-});
-
-app.get('/last/day', function(req, res){
-        queryIssuesOfLast('day', function(snaps){
-                res.render('playground.html', {snaps : snaps});
-        });
-});
-
-app.get('/last/week', function(req, res){
-       	queryIssuesOfLast('week', function(snaps){
-                res.render('playground.html', {snaps : snaps});
-        });
-});
-
 app.get('/last/month', function(req, res){
         queryIssuesOfLast('month', function(snaps){
                 res.render('playground.html', {snaps : snaps});

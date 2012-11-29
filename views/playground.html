@@ -3,14 +3,19 @@
 {% block title %}Frontend Production opened issues timeline{% endblock %}
 
 {% block body %}
-<div class="paxl">
+	
+	<div class="paxl">
+		<ul class="nav nav-tabs">
+			<li class=""><a href="/last/repartition">Last repartition</a></li>
+			<li class="active"><a href="/last/month">Last month count</a></li>
+		</ul>
+		<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+	</div>
 
 	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
 	<script src="http://code.highcharts.com/highcharts.js"></script>
 	<script src="http://code.highcharts.com/stock/highstock.js"></script>
 	<script src="http://code.highcharts.com/modules/exporting.js"></script>
-
-	<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 
 	<script>
 
@@ -48,6 +53,5 @@
 		});
 
 	</script>
-
-</div>
+	
 {% endblock %}
