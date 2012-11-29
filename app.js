@@ -89,6 +89,8 @@ function lookForIssues(){
 
 // Routes
 
+app.get('/', function(req, res){ res.redirect('/last/repartition'); });
+
 app.get('/last/repartition', function(req, res){
 	BugSnapshot
 		.find()
