@@ -54,8 +54,8 @@ mongoose.connection.on('error', function (err) {
 // Connect to model
 
 var bugSnapshotSchema = new mongoose.Schema({
-        created_on : {type: Date, default: Date.now},
-        count : Number,
+    created_on : {type: Date, default: Date.now},
+    count : Number,
 	issues : Object
 });
 
@@ -67,25 +67,27 @@ var delay = parseInt(0.5*60*60*1000); // every 1/2 hour
 var timer = setInterval(lookForIssues, delay);
 function lookForIssues(){
 	console.log('looking for currrent issues ...');
-        redmine.getIssues({query_id: "640", limit : "100"}, function(err, data) {
-                if (err) {
-                        console.log("Error: " + err.message);
-                        // stop timer
-                        clearInterval(timer);
-                        return;
-                }
-                var snap = new BugSnapshot({
+    redmine.getIssues({query_id: "640", limit : "100"}, function(err, data) {
+        
+        if (err) {
+                console.log("Error: " + err.message);
+                // stop timer
+                clearInterval(timer);
+                return;
+        }
+        
+        var snap = new BugSnapshot({
 			count : data.total_count,
 			issues : data.issues
 		});
-                snap.save(function(err){
-                        if (err) throw new Error('Woooops');
-                        console.log(' |-> nb of issues : ' + data.total_count);
-                });
+		
+        snap.save(function(err){
+                if (err) throw new Error('Woooops');
+                console.log(' |-> nb of issues : ' + data.total_count);
         });
+        
+    });
 }
-// look for issues on app start
-//lookForIssues();
 
 // Routes
 
@@ -119,8 +121,6 @@ app.get('/last/repartition', function(req, res){
 		})
 	;
 
-
-
 });
 
 app.get('/last/month', function(req, res){
@@ -129,19 +129,21 @@ app.get('/last/month', function(req, res){
         });
 });
 
-function queryIssuesOfLast(period, next){
+var timeUnitValue = (function(){
+	var one = {};
+	one.minute	= parseInt(60 * 1000);
+	one.hour	= 60 * one.minute;
+	one.day 	= 24 * one.hour;
+	one.week 	= 7 * one.day;
+	one.month	= 4 * one.week;
+	return one
+}());
+
+function queryIssuesOfLast(periodUnit, next){
 
 	var currentTime = Date.now();
 	
-	var one = {
-		minute	: parseInt(60 * 1000),
-		hour	: parseInt(60 * 60 * 1000),
-		day 	: parseInt(24 * 60 * 60 * 1000),
-		week 	: parseInt(7 * 24 * 60 * 60 * 1000),
-		month	: parseInt(4 * 7 * 24 * 60 * 60 * 1000)
-	};
-	
-    var sinceDate = currentTime - one[period];
+    var sinceDate = currentTime - timeUnitValue[periodUnit];
 
     var q = BugSnapshot
     	.find({ "created_on" : {"$gte": new Date(sinceDate)} })
