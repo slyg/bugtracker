@@ -3,15 +3,10 @@
 var
 	express = require('express'),
 	mongoose = require('mongoose'),
-	Redmine = require('./lib/redmine'),
 	cons = require('consolidate'),
-        swig = require('swig'),
-	async = require('async'),
+	swig = require('swig'),
 	conf = require('./conf')
 ;
-
-var redmine = new Redmine(conf.redmine);
-
 
 // App config
 
@@ -20,25 +15,26 @@ var app = module.exports = express();
 app.configure(function(){
 
 	app.set('views', __dirname + '/views');
-        app.engine('html', cons.swig);
+	app.engine('html', cons.swig);
 
 	app.use(express.static(__dirname + '/static'));
 
-        app.use(express.logger());
-        app.use(express.cookieParser());
+    app.use(express.logger());
+    app.use(express.cookieParser());
 
-        app.use(express.bodyParser());
-        app.use(express.methodOverride());
-        app.use(app.router);
-        app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    app.use(express.bodyParser());
+    app.use(express.methodOverride());
+    app.use(app.router);
+    app.use(express.errorHandler({ dumpExceptions: true, showStack: true }));
+    
 });
 
 app.configure('development', function(){
-        swig.init({ root: __dirname + '/views', allowErrors: true, cache: false });
+	swig.init({ root: __dirname + '/views', allowErrors: true, cache: false });
 });
 
 app.configure('production', function(){
-        swig.init({ root: __dirname + '/views', allowErrors: true, cache: true });
+	swig.init({ root: __dirname + '/views', allowErrors: true, cache: true });
 	app.use(express.errorHandler());
 });
 
@@ -50,7 +46,6 @@ mongoose.connection.on('error', function (err) {
         console.error('Make sure a mongoDB server is running and accessible by this application')
 });
 
-
 // Connect to model
 
 var bugSnapshotSchema = new mongoose.Schema({
@@ -59,103 +54,17 @@ var bugSnapshotSchema = new mongoose.Schema({
 	issues : Object
 });
 
+// Expose model interface
+
 var BugSnapshot = db.model('bugSnapshot', bugSnapshotSchema);
 
 // Launch periodic poll
 
-var delay = parseInt(0.5*60*60*1000); // every 1/2 hour
-var timer = setInterval(lookForIssues, delay);
-function lookForIssues(){
-	console.log('looking for currrent issues ...');
-    redmine.getIssues({query_id: "640", limit : "100"}, function(err, data) {
-        
-        if (err) {
-                console.log("Error: " + err.message);
-                // stop timer
-                clearInterval(timer);
-                return;
-        }
-        
-        var snap = new BugSnapshot({
-			count : data.total_count,
-			issues : data.issues
-		});
-		
-        snap.save(function(err){
-                if (err) throw new Error('Woooops');
-                console.log(' |-> nb of issues : ' + data.total_count);
-        });
-        
-    });
-}
+require('./poller')(BugSnapshot);
 
 // Routes
 
-app.get('/', function(req, res){ res.redirect('/last/repartition'); });
-
-app.get('/last/repartition', function(req, res){
-	BugSnapshot
-		.find()
-		.limit(1)
-		.sort("-created_on")
-		.exec(function(err, snaps){
-			
-           		if(err) throw new Error("mmm :(");
-			
-			var snap = snaps[0];
-			var index = 0;
-			var stats = {};
-			var cb = function(){};		
-
-			async.forEach(snap.issues,
-				function(issue, cb){
-					if(!stats[issue.assigned_to.name]) stats[issue.assigned_to.name] = {count: 0, name : issue.assigned_to.name};
-					stats[issue.assigned_to.name].count++;
-					cb();
-				}, function(err){
-					if(err) throw new Error("arf !");
-					res.render('piechart.html', {stats : stats});
-				}
-			);
-
-		})
-	;
-
-});
-
-app.get('/last/month', function(req, res){
-        queryIssuesOfLast('month', function(snaps){
-                res.render('playground.html', {snaps : snaps});
-        });
-});
-
-var timeUnitValue = (function(){
-	var one = {};
-	one.minute	= parseInt(60 * 1000);
-	one.hour	= 60 * one.minute;
-	one.day 	= 24 * one.hour;
-	one.week 	= 7 * one.day;
-	one.month	= 4 * one.week;
-	return one
-}());
-
-function queryIssuesOfLast(periodUnit, next){
-
-	var currentTime = Date.now();
-	
-    var sinceDate = currentTime - timeUnitValue[periodUnit];
-
-    var q = BugSnapshot
-    	.find({ "created_on" : {"$gte": new Date(sinceDate)} })
-    	.sort("created_on")
-    ;
-    
-    q.exec(function(err, snaps){
-        if(err) throw new Error("mmm :(");
-        next(snaps);
-    });
-
-}
+require('./routes')(app, BugSnapshot);
 
 // App server start
 
