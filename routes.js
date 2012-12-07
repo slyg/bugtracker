@@ -1,6 +1,7 @@
 // Dependencies
 
-var Q = require('q'),
+var 
+	Q = require('q'),
 	async = require('async')
 ;
 
@@ -13,18 +14,32 @@ module.exports = function(app, Model){
 	app.get('/', function(req, res){ res.redirect('/last/repartition'); });
 	
 	app.get('/last/repartition', function(req, res){
-	
 		queryLastRepartition()
 			.then(function(stats){ res.render('piechart.html', {stats : stats}); })
 			.fail(console.warn)
 		;
-	
 	});
 	
 	app.get('/last/month', function(req, res){
+	    queryIssuesOfLast('month')
+	    	.then(function(snaps){ res.render('timeline.html', {snaps : snaps}); })
+	    	.fail(console.warn)
+	    ;
+	});
+	
+	app.get('/last/month/stacked', function(req, res){
 	
 	    queryIssuesOfLast('month')
-	    	.then(function(snaps){ res.render('playground.html', {snaps : snaps}); })
+	    	.then(function(snaps){ 
+	    		
+	    		getIssuesByNameArr(snaps)
+	    			.then(fillInEmptyKeys)
+	    			.then(getIssuesArrByNames)
+	    			.then(formatToArray)
+	    			.then(function(datas){
+		    			res.render('timeline-stacked.html', {datas : datas}); 
+	    			});
+	    	})
 	    	.fail(console.warn)
 	    ;
 	    
@@ -32,6 +47,221 @@ module.exports = function(app, Model){
 	
 	
 	// Helpers
+	
+	function formatToArray(IssuesArrByNames){
+		
+		//	render
+		//	[
+		//		{
+		//			name : 'name',
+		//			data : [counts]
+		// 		},
+		//		...
+		//	]
+		//
+		//	from
+		//	{
+    	//		name1 : [countA, countC, ...],
+    	//		name2 : [countB, countD, ...],
+    	//		...
+    	//	}
+    	
+    	var 
+    		deferred = Q.defer(),
+    		newFormatArray = []
+    	;
+    	
+    	for(var property in IssuesArrByNames){
+	    	
+	    	newFormatArray.push({
+		    	name : property,
+		    	data : IssuesArrByNames[property]
+	    	});
+	    	
+    	}
+    	
+    	deferred.resolve(newFormatArray);
+    	
+    	return deferred.promise;
+		
+	}
+	    
+    function getIssuesArrByNames(issuesByNameArr){
+	  
+	    //	renders
+    	//	{
+    	//		name1 : [countA, countC, ...],
+    	//		name2 : [countB, countD, ...],
+    	//		...
+    	//	}
+    	
+    	var 
+    		deferred = Q.defer(),
+    		issuesSequenceByName = {}
+    	;
+    	
+    	async.forEach(issuesByNameArr,
+    		function(issuesCountsByName, cb){
+	    		
+	    						    	
+	    		for (var property in issuesCountsByName){
+	    			if (issuesSequenceByName[property] != undefined ){
+	    				issuesSequenceByName[property].push(issuesCountsByName[property] ? issuesCountsByName[property] : 0) 
+	    			} else {
+	    				issuesSequenceByName[property] = [];
+	    			}
+	    		}
+	    		
+	    		cb();
+	    		
+    		}, function(err){
+    			if(err) deferred.reject(new Error("arf !"));
+    			deferred.resolve(issuesSequenceByName);
+    		}
+    	
+    	);
+    	
+    	return deferred.promise;
+		
+		
+	}
+	
+	function fillInEmptyKeys(issuesByNameArr){
+		
+		//	renders
+    	//	[
+    	//		{
+    	//			name1 : countA,
+    	//			name2 : countB
+    	//		},
+    	//		{
+    	//			name1 : countC,
+    	//			name2 : countD
+    	//		}
+    	//	]
+    	
+    	//	from
+    	//	[
+    	//		{
+    	//			name1 : countA
+    	//		},
+    	//		{
+    	//			name2 : countD
+    	//		}
+    	//	]
+    	
+    	var 
+    		deferred = Q.defer(),
+    		keys = []
+    	;
+    	
+    	// get all keys on collection
+    	
+    	async.forEach(issuesByNameArr,
+    	
+    		function(item, cb){
+	    		for (var property in item){ 
+	    			var containsProperty = keys.some(function(a){return a == property});
+	    			if (!containsProperty) keys.push(property);
+	    		}
+	    		cb();
+    		},
+    		
+    		function(err){
+	    		
+	    		async.forEach(issuesByNameArr,
+	    		
+	    			function(issuesByName, cb){
+	    				var i = 0, len = keys.length;
+	    				for (; i < len; i++){ if( !issuesByName[ keys[i] ] ) issuesByName[keys[i]] = 0; }
+	    				cb();
+		    		},
+		    		
+		    		function(err){}
+		    		
+	    		);
+	    		
+	    		if(err) deferred.reject(new Error("arf !"));
+		    	deferred.resolve(issuesByNameArr);
+	    		
+    		}
+    	
+    	);
+    	
+    	return deferred.promise;
+		
+	}
+    
+    function getIssuesByNameArr(snaps){
+    
+    	//	renders
+    	//	[
+    	//		{
+    	//			name1 : countA,
+    	//			name2 : countB
+    	//		},
+    	//		{
+    	//			name1 : countC,
+    	//			name2 : countD
+    	//		}
+    	//	]
+    
+    	var 
+    		deferred = Q.defer(),
+    		issuesByNameArr = []
+    	;
+    
+	    async.forEach(snaps, 
+			function(snap, cb){
+    			getIssuesByName(snap.issues)
+	    			.then(function(issuesByName){ issuesByNameArr.push(issuesByName); })
+	    			.then(cb)
+	    			.fail(console.warn)
+	    		;
+			}, function(err){
+				if(err) deferred.reject(new Error("arf !"));
+    			deferred.resolve(issuesByNameArr);
+			}
+		);
+		
+		return deferred.promise;
+		
+    }
+    
+    function getIssuesByName(issues){ 
+    
+	    //	renders 
+	    //	{
+	    //		name1 : countA, 
+	    //		name2 : countB,
+	    //		...
+	    //	}
+	    
+    	var
+    		deferred = Q.defer(),
+			name = '',
+			coll = {}
+		;
+		
+		async.forEach(issues,
+			function(issue, cb){
+				
+				name = issue.assigned_to.name;
+				count = coll[name];
+    			coll[name] = (count === undefined) ? 1 : count + 1;
+				cb();
+				
+			}, function(err){
+			
+				if(err) deferred.reject(new Error("arf !"));
+				deferred.resolve(coll);
+				
+			}
+		);
+		
+		return deferred.promise;
+		
+    }
 
 	function queryLastRepartition(){
 	

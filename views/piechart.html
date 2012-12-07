@@ -5,10 +5,9 @@
 {% block body %}
 
 	<div class="paxl">
-		<ul class="nav nav-tabs">
-			<li class="active"><a href="/last/repartition">Last repartition</a></li>
-			<li class=""><a href="/last/month">Last month count</a></li>
-		</ul>
+		
+		{% include 'nav.html' with {'nav': '/last/repartition'} %}
+		
 		<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
 	</div>
 

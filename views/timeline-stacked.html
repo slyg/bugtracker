@@ -1,0 +1,75 @@
+{% extends "layout.html" %}
+
+{% block title %}Frontend Production opened issues timeline{% endblock %}
+
+{% block body %}
+	
+	<div class="paxl">
+		
+		{% include 'nav.html' with {'nav': '/last/month/stacked'} %}
+		
+		<div id="container" style="min-width: 400px; height: 400px; margin: 0 auto"></div>
+	</div>
+
+	<script src="http://code.jquery.com/jquery-1.8.2.min.js"></script>
+	<script src="http://code.highcharts.com/highcharts.js"></script>
+	<script src="http://code.highcharts.com/stock/highstock.js"></script>
+	<script src="http://code.highcharts.com/modules/exporting.js"></script>
+
+	<script>
+		
+		var series = [
+			{% for data in datas %}{
+				name : "{{data.name}}",
+				data : [{{data.data}}]
+			}{% if !loop.last %},
+			{% endif %}{% endfor %}
+		];
+
+
+$(function () {
+    var chart;
+    $(document).ready(function() {
+        chart = new Highcharts.Chart({
+            chart: {
+                renderTo: 'container',
+                type: 'area'
+            },
+            title: {
+                text: 'Frontenders stacked opened issues on production since a month'
+            },
+            yAxis: {
+                title: {
+                    text: 'Billions'
+                },
+                labels: {
+                    formatter: function() {
+                        return this.value / 1000;
+                    }
+                }
+            },
+            tooltip: {
+                formatter: function() {
+                    return '' + Highcharts.numberFormat(this.y, 0, ',');
+                }
+            },
+            plotOptions: {
+                area: {
+                    stacking: 'normal',
+                    lineWidth: 0,
+                    marker: {
+                    	enabled : false,
+                        lineWidth: 1,
+                        lineColor: '#666666'
+                    }
+                }
+            },
+            series: series
+        });
+    });
+    
+});
+
+	</script>
+	
+{% endblock %}
