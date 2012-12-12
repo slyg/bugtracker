@@ -321,6 +321,7 @@ module.exports = function(app, Model){
 	
 	    var query = Model
 	    	.find({ "created_on" : {"$gte": new Date(sinceDate)} })
+	    	.limit(20)
 	    	.sort("created_on")
 	    ;
 	    
