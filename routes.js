@@ -310,10 +310,20 @@ module.exports = function(app, Model){
 		return one
 	}());
 	
+	var timeToCollectionLength = (function(){
+		var one = {};
+		one.hour	= 2 // as poller works every 1/2 hour, this value should be in the conf
+		one.day		= 24 * one.hour;
+		one.week	= 7 * one.day;
+		one.month	= 4 * one.week;
+		return one;
+	}());
+	
 	function queryIssuesOfLast(periodUnit){
 	
 		var deferred = Q.defer();
-	
+		
+		/*
 		var 
 			currentTime = Date.now(),
 	    	sinceDate = currentTime - timeUnitValue[periodUnit]
@@ -324,7 +334,14 @@ module.exports = function(app, Model){
 	    	.limit(20)
 	    	.sort("created_on")
 	    ;
+	    */
 	    
+	    var query = Model
+	    	.find()
+	    	.sort("created_on")
+	    	.limit(timeToCollectionLength[periodUnit])
+	    ;
+	     
 	    query.exec(function(err, snaps){
 	        if(err) deferred.reject(new Error("Issue occured when querying db :("));
 	        deferred.resolve(snaps);
