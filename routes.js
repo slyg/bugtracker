@@ -20,16 +20,16 @@ module.exports = function(app, Model){
 		;
 	});
 	
-	app.get('/last/month', function(req, res){
-	    queryIssuesOfLast('month')
+	app.get('/last/twoweeks', function(req, res){
+	    queryIssuesOfLast('twoweeks')
 	    	.then(function(snaps){ res.render('timeline.html', {snaps : snaps}); })
 	    	.fail(console.warn)
 	    ;
 	});
 	
-	app.get('/last/month/stacked', function(req, res){
+	app.get('/last/twoweeks/stacked', function(req, res){
 	
-	    queryIssuesOfLast('month')
+	    queryIssuesOfLast('twoweeks')
 	    	.then(function(snaps){ 
 	    		
 	    		getIssuesByNameArr(snaps)
@@ -115,7 +115,7 @@ module.exports = function(app, Model){
 	    		cb();
 	    		
     		}, function(err){
-    			if(err) deferred.reject(new Error("arf !"));
+    			if(err) deferred.reject(err);
     			deferred.resolve(issuesSequenceByName);
     		}
     	
@@ -181,7 +181,7 @@ module.exports = function(app, Model){
 		    		
 	    		);
 	    		
-	    		if(err) deferred.reject(new Error("arf !"));
+	    		if(err) deferred.reject(err);
 		    	deferred.resolve(issuesByNameArr);
 	    		
     		}
@@ -219,7 +219,7 @@ module.exports = function(app, Model){
 	    			.fail(console.warn)
 	    		;
 			}, function(err){
-				if(err) deferred.reject(new Error("arf !"));
+				if(err) deferred.reject(err);
     			deferred.resolve(issuesByNameArr);
 			}
 		);
@@ -253,7 +253,7 @@ module.exports = function(app, Model){
 				
 			}, function(err){
 			
-				if(err) deferred.reject(new Error("arf !"));
+				if(err) deferred.reject(err);
 				deferred.resolve(coll);
 				
 			}
@@ -290,7 +290,7 @@ module.exports = function(app, Model){
 					stats[issue.assigned_to.name].count++;
 					cb();
 				}, function(err){
-					if(err) deferred.reject(new Error("arf !"));
+					if(err) deferred.reject(err);
 					deferred.resolve(stats);
 				}
 			);
@@ -300,41 +300,19 @@ module.exports = function(app, Model){
 		return deferred.promise;
 	}
 	
-	var timeUnitValue = (function(){
-		var one = {};
-		one.minute	= 60 * 1000;
-		one.hour	= 60 * one.minute;
-		one.day 	= 24 * one.hour;
-		one.week 	= 7 * one.day;
-		one.month	= 4 * one.week;
-		return one
-	}());
-	
 	var timeToCollectionLength = (function(){
-		var one = {};
-		one.hour	= 2 // as poller works every 1/2 hour, this value should be in the conf
-		one.day		= 24 * one.hour;
-		one.week	= 7 * one.day;
-		one.month	= 4 * one.week;
-		return one;
+		var len = {};
+		len.hour		= 2 // as poller works every 1/2 hour, this value should be in the conf
+		len.day			= 24 * len.hour;
+		len.week		= 7 * len.day;
+		len.twoweeks	= 2 * len.week;
+		len.month		= 2 * len.twoweeks;
+		return len;
 	}());
 	
 	function queryIssuesOfLast(periodUnit){
 	
 		var deferred = Q.defer();
-		
-		/*
-		var 
-			currentTime = Date.now(),
-	    	sinceDate = currentTime - timeUnitValue[periodUnit]
-	    ;
-	
-	    var query = Model
-	    	.find({ "created_on" : {"$gte": new Date(sinceDate)} })
-	    	.limit(20)
-	    	.sort("created_on")
-	    ;
-	    */
 	    
 	    var query = Model
 	    	.find()
@@ -343,7 +321,7 @@ module.exports = function(app, Model){
 	    ;
 	     
 	    query.exec(function(err, snaps){
-	        if(err) deferred.reject(new Error("Issue occured when querying db :("));
+	        if(err) deferred.reject(err);
 	        deferred.resolve(snaps);
 	    });
 	    
