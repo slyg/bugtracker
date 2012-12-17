@@ -20,16 +20,16 @@ module.exports = function(app, Model){
 		;
 	});
 	
-	app.get('/last/twoweeks', function(req, res){
-	    queryIssuesOfLast('twoweeks')
+	app.get('/last/week', function(req, res){
+	    queryIssuesOfLast('week')
 	    	.then(function(snaps){ res.render('timeline.html', {snaps : snaps}); })
 	    	.fail(console.warn)
 	    ;
 	});
 	
-	app.get('/last/twoweeks/stacked', function(req, res){
+	app.get('/last/week/stacked', function(req, res){
 	
-	    queryIssuesOfLast('twoweeks')
+	    queryIssuesOfLast('week')
 	    	.then(function(snaps){ 
 	    		
 	    		getIssuesByNameArr(snaps)
@@ -316,7 +316,7 @@ module.exports = function(app, Model){
 	    
 	    var query = Model
 	    	.find()
-	    	.sort("created_on")
+	    	.sort({created_on : -1})
 	    	.limit(timeToCollectionLength[periodUnit])
 	    ;
 	     
