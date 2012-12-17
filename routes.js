@@ -22,7 +22,7 @@ module.exports = function(app, Model){
 	
 	app.get('/last/week', function(req, res){
 	    queryIssuesOfLast('week')
-	    	.then(function(snaps){ res.render('timeline.html', {snaps : snaps}); })
+	    	.then(function(snaps){ res.render('timeline.html', {snaps : snaps.reverse()}); })
 	    	.fail(console.warn)
 	    ;
 	});
@@ -37,7 +37,7 @@ module.exports = function(app, Model){
 	    			.then(getIssuesArrByNames)
 	    			.then(formatToArray)
 	    			.then(function(datas){
-		    			res.render('timeline-stacked.html', {datas : datas}); 
+		    			res.render('timeline-stacked.html', {datas : datas.reverse()}); 
 	    			});
 	    	})
 	    	.fail(console.warn)
